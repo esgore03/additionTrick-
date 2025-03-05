@@ -80,11 +80,12 @@ element.click()
 
 try:
     course_input = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.NAME, "course_code_input")) 
+        EC.presence_of_element_located((By.NAME, "asm_asi_codigo")) 
     )
-    group_input = driver.find_element(By.NAME, "group_number_input") 
-    add_button = driver.find_element(By.NAME, "add_button")  
-
+    group_input = driver.find_element(By.NAME, "asm_grupo") 
+    add_button = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "input[title='Haciendo clic en este botón ud. podrá Adicionar la asignatura deseada']"))
+    ) 
     course_input.send_keys(course_code)
     group_input.send_keys(group_number)
     add_button.click()
