@@ -10,21 +10,25 @@ import time
 
 
 load_dotenv()
-
 browser = os.getenv("BROWSER")
 browser_path = os.getenv("BROWSER_PATH")
 webdriver_path = os.getenv("WEBDRIVER_PATH")
 username = os.getenv("SIRA_USERNAME")
 password = os.getenv("SIRA_PASSWORD")
+course_code = os.getenv("COURSE_CODE")
+group_number = os.getenv("GROUP_NUMBER")
 
 print(f"BROWSER: {browser}")
 print(f"BROWSER_PATH: {browser_path}")
 print(f"WEBDRIVER: {webdriver_path}")
 print(f"USERNAME: {username}")
 print(f"PASSWORD: {password}")
+print(f"CODE: {course_code}")
+print(f"GROUP: {group_number}")
 
-if not browser or not browser_path or not webdriver_path or not username or not password:
-	raise ValueError("Error: BROWSER, WEBDRIVER, SIRA_USERNAME and SIRA_PASSWORD environment variables must be set")
+
+if not all([browser, browser_path, webdriver_path, username, password, course_code, group_number]):
+    raise ValueError("Error: All required environment variables must be set")
 
 chrome_options = Options()
 if browser == "BRAVE":
@@ -59,7 +63,7 @@ except TimeoutException:
 
 
 try:
-	WebDriverWait(driver, 5).until(EC.alert_is_present())
+	WebDriverWait(driver, 10).until(EC.alert_is_present())
 	alert = driver.switch_to.alert
 	alert.accept()
 except NoAlertPresentException:
@@ -68,12 +72,24 @@ except NoAlertPresentException:
 
 element = WebDriverWait(driver, 10).until(
 	EC.element_to_be_clickable(
-		(By.CSS_SELECTOR, "input[type='image'][title='Consultar Calificaciones del Estudiante']")
+		(By.CSS_SELECTOR, "input[type='image'][title='Matrícula académica']")
 	)
 )
 
 element.click()
 
+try:
+    course_input = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.NAME, "course_code_input")) 
+    )
+    group_input = driver.find_element(By.NAME, "group_number_input") 
+    add_button = driver.find_element(By.NAME, "add_button")  
+
+    course_input.send_keys(course_code)
+    group_input.send_keys(group_number)
+    add_button.click()
+except:
+    print("Error: Fields for course code or group number not found")
 
 input("Press Enter to close...")
 driver.quit()
