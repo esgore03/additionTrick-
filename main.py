@@ -4,9 +4,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoAlertPresentException
 from dotenv import load_dotenv
 import os
 import time
+import json
 
 
 load_dotenv()
@@ -36,11 +38,14 @@ elif browser == "GOOGLE_CHROME":
 service = Service(webdriver_path)
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
+# ---------------------------------------------------------------------------- #
+#                                PLATFORM LOGIN                                #
+# ---------------------------------------------------------------------------- #
+
 driver.get("https://sira1.univalle.edu.co/sra")
 
 try:
-	WebDriverWait(driver, 5).until(EC.alert_is_present())
-	alert = driver.switch_to.alert
+	alert = WebDriverWait(driver, 5).until(EC.alert_is_present())
 	alert.accept()
 except NoAlertPresentException:
 	print("No alert found")
@@ -57,22 +62,101 @@ try:
 except TimeoutException:
 	print("Error: login fields not found")
 
-
 try:
-	WebDriverWait(driver, 5).until(EC.alert_is_present())
-	alert = driver.switch_to.alert
+	alert = WebDriverWait(driver, 5).until(EC.alert_is_present())
 	alert.accept()
 except NoAlertPresentException:
-	print("No alert found")
+	print("Error: no alert found")
 
-
-element = WebDriverWait(driver, 10).until(
-	EC.element_to_be_clickable(
-		(By.CSS_SELECTOR, "input[type='image'][title='Consultar Calificaciones del Estudiante']")
+try:
+	element = WebDriverWait(driver, 10).until(
+		EC.element_to_be_clickable(
+			(By.CSS_SELECTOR, "input[type='image'][title='Matrícula Académica']")
+		)
 	)
-)
+	element.click()
+except:
+	print("Error: element not found")
+	driver.quit()
+	exit()
 
-element.click()
+# ---------------------------------------------------------------------------- #
+#                             LOAD OF THE SUBJECTS                             #
+# ---------------------------------------------------------------------------- #
+
+subject_codes = []
+subject_groups = []
+subject_was_not_enrolled = []
+
+with open("subjects_to_enroll.json", "r") as file:
+	subjects = json.load(file)
+
+for subject in subjects:
+	subject_codes.append(subject["code"])
+	subject_groups.append(subject["group"])
+	subject_was_not_enrolled.append(True)
+
+# ---------------------------------------------------------------------------- #
+#                              SUBJECTS ENROLLMENT                             #
+# ---------------------------------------------------------------------------- #
+
+i = 0
+
+while any(subject_was_not_enrolled):
+	if not subject_was_not_enrolled[i]: # Already enrrolled
+		i = (i + 1) % len(subject_codes)
+		continue
+
+	subject_code = subject_codes[i]
+	subject_group = subject_groups[i]
+
+	print(f"Enrolling subject with code: {subject_code} and group: {subject_group}")
+
+	try:
+		code_input = WebDriverWait(driver, 10).until(
+			EC.presence_of_element_located((By.NAME, "asm_asi_codigo"))
+		)
+		group_input = driver.find_element(By.NAME, "asm_grupo")
+
+		code_input.send_keys(subject_code)
+		group_input.send_keys(subject_group)
+		group_input.send_keys("\n") # Simulate an enter
+	except TimeoutException:
+		print("Error: enrollment field not found")
+
+	try:
+		accept_button = WebDriverWait(driver, 10).until(
+			EC.element_to_be_clickable((By.NAME, "botonAceptar"))
+		)
+		accept_button.click()
+	except TimeoutException:
+		print("Error: accept button not found")
+
+	there_was_an_error_alert = False
+	try:
+		alert = WebDriverWait(driver, 5).until(EC.alert_is_present())
+		alert_text = alert.text
+
+		if not "No hay cupo para la asignatura" in alert_text:
+			subject_was_not_enrolled[i] = False
+		else:
+			there_was_an_error_alert = True # If an error has occurred, the first alert indicates
+											# the error and the second that the subject could be enrolled.
+
+		alert.accept()
+	except NoAlertPresentException:
+		print("Error: no alert found")
+
+	if there_was_an_error_alert:
+		try:
+			alert = WebDriverWait(driver, 5).until(EC.alert_is_present())
+			alert.accept()
+		except NoAlertPresentException:
+			print("Error: no alert found")
+
+	i = (i + 1) % len(subject_codes)
+
+	time.sleep(2)
 
 
 input("Press Enter to close...")

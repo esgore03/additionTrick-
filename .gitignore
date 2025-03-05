@@ -1,3 +1,5 @@
 chromedriver*
 .venv/
 .env
+subjects_to_cancel.json
+subjects_to_enroll.json

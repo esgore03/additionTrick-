@@ -34,4 +34,17 @@
 	SIRA_PASSWORD=
 	```
 
-4. Run the script: `python main.py`.
+4. Create `subjects_to_enroll.json` and `subjects_to_cancel.json`: `touch subjects_to_enroll.json subjects_to_cancel.json`.
+
+	Those files' content must follow the following structure:
+
+	```
+	[
+		{
+			"code": "<code>",
+			"group": "<group>"
+		}
+	]
+	```
+
+5. Run the script: `python main.py`.
