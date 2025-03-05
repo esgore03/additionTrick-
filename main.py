@@ -78,6 +78,13 @@ element = WebDriverWait(driver, 10).until(
 
 element.click()
 
+
+close_icon = WebDriverWait(driver, 10).until(
+	EC.element_to_be_clickable((By.ID, "icono_cerrar"))
+)
+close_icon.click()
+
+	
 try:
     course_input = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.NAME, "asm_asi_codigo")) 
@@ -89,6 +96,11 @@ try:
     course_input.send_keys(course_code)
     group_input.send_keys(group_number)
     add_button.click()
+	
+	accept_button = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.NAME, "botonAceptar"))
+    )
+    accept_button.click()
 except:
     print("Error: Fields for course code or group number not found")
 
