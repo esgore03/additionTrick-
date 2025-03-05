@@ -46,7 +46,7 @@ try:
 	WebDriverWait(driver, 5).until(EC.alert_is_present())
 	alert = driver.switch_to.alert
 	alert.accept()
-except NoAlertPresentException:
+except:
 	print("No alert found")
 
 try:
@@ -58,7 +58,7 @@ try:
 	user_input.send_keys(username)
 	password_input.send_keys(password)
 	password_input.submit()
-except TimeoutException:
+except:
 	print("Error: login fields not found")
 
 
@@ -66,13 +66,13 @@ try:
 	WebDriverWait(driver, 10).until(EC.alert_is_present())
 	alert = driver.switch_to.alert
 	alert.accept()
-except NoAlertPresentException:
+except:
 	print("No alert found")
 
 
 element = WebDriverWait(driver, 10).until(
 	EC.element_to_be_clickable(
-		(By.CSS_SELECTOR, "input[type='image'][title='Matrícula académica']")
+		(By.CSS_SELECTOR, "input[type='image'][title='Matrícula Académica']")
 	)
 )
 
@@ -96,13 +96,15 @@ try:
     course_input.send_keys(course_code)
     group_input.send_keys(group_number)
     add_button.click()
-	
-	accept_button = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.NAME, "botonAceptar"))
-    )
-    accept_button.click()
+
+
 except:
     print("Error: Fields for course code or group number not found")
+
+accept_button = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.NAME, "botonAceptar" ))
+)
+accept_button.click()
 
 input("Press Enter to close...")
 driver.quit()
