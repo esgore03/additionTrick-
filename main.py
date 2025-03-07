@@ -9,6 +9,8 @@ import os
 import time
 
 
+
+
 load_dotenv()
 browser = os.getenv("BROWSER")
 browser_path = os.getenv("BROWSER_PATH")
@@ -18,93 +20,87 @@ password = os.getenv("SIRA_PASSWORD")
 course_code = os.getenv("COURSE_CODE")
 group_number = os.getenv("GROUP_NUMBER")
 
-print(f"BROWSER: {browser}")
-print(f"BROWSER_PATH: {browser_path}")
-print(f"WEBDRIVER: {webdriver_path}")
-print(f"USERNAME: {username}")
-print(f"PASSWORD: {password}")
-print(f"CODE: {course_code}")
-print(f"GROUP: {group_number}")
-
-
 if not all([browser, browser_path, webdriver_path, username, password, course_code, group_number]):
     raise ValueError("Error: All required environment variables must be set")
 
 chrome_options = Options()
 if browser == "BRAVE":
-	chrome_options.binary_location = browser_path
-elif browser == "GOOGLE_CHROME":
-	pass
+    chrome_options.binary_location = browser_path
+        
+while True:
+    service = Service(webdriver_path)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver.get("https://sira1.univalle.edu.co/sra")
 
 
-service = Service(webdriver_path)
-driver = webdriver.Chrome(service=service, options=chrome_options)
+    try:
+        WebDriverWait(driver, 5).until(EC.alert_is_present()).accept()
+    except:
+        print("No alert found")
 
-driver.get("https://sira1.univalle.edu.co/sra")
+    try:
+        user_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.NAME, "usu_login_aut"))
+        )
+        password_input = driver.find_element(By.NAME, "usu_password_aut")
 
-try:
-	WebDriverWait(driver, 5).until(EC.alert_is_present())
-	alert = driver.switch_to.alert
-	alert.accept()
-except:
-	print("No alert found")
+        user_input.send_keys(username)
+        password_input.send_keys(password)
+        password_input.submit()
+    except:
+        print("Error: login fields not found")
 
-try:
-	user_input = WebDriverWait(driver, 10).until(
-		EC.presence_of_element_located((By.NAME, "usu_login_aut"))
-	)
-	password_input = driver.find_element(By.NAME, "usu_password_aut")
+    try:
+        WebDriverWait(driver, 10).until(EC.alert_is_present()).accept()
+    except:
+        print("No alert found")
 
-	user_input.send_keys(username)
-	password_input.send_keys(password)
-	password_input.submit()
-except:
-	print("Error: login fields not found")
-
-
-try:
-	WebDriverWait(driver, 10).until(EC.alert_is_present())
-	alert = driver.switch_to.alert
-	alert.accept()
-except:
-	print("No alert found")
-
-
-element = WebDriverWait(driver, 10).until(
-	EC.element_to_be_clickable(
-		(By.CSS_SELECTOR, "input[type='image'][title='Matrícula Académica']")
-	)
-)
-
-element.click()
-
-
-close_icon = WebDriverWait(driver, 10).until(
-	EC.element_to_be_clickable((By.ID, "icono_cerrar"))
-)
-close_icon.click()
-
-	
-try:
-    course_input = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.NAME, "asm_asi_codigo")) 
+    element = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "input[type='image'][title='Matrícula Académica']"))
     )
-    group_input = driver.find_element(By.NAME, "asm_grupo") 
-    add_button = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, "input[title='Haciendo clic en este botón ud. podrá Adicionar la asignatura deseada']"))
-    ) 
-    course_input.send_keys(course_code)
-    group_input.send_keys(group_number)
-    add_button.click()
+    element.click()
 
+    close_icon = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.ID, "icono_cerrar"))
+    )
+    close_icon.click()
 
-except:
-    print("Error: Fields for course code or group number not found")
+    try:
+        course_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.NAME, "asm_asi_codigo"))
+        )
+        group_input = driver.find_element(By.NAME, "asm_grupo")
+        add_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "input[title='Haciendo clic en este botón ud. podrá Adicionar la asignatura deseada']"))
+        )
+        course_input.send_keys(course_code)
+        group_input.send_keys(group_number)
+        add_button.click()
+    except:
+        print("Error: Fields for course code or group number not found")
 
-accept_button = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.NAME, "botonAceptar" ))
-)
-accept_button.click()
+    accept_button = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.NAME, "botonAceptar"))
+    )
+    accept_button.click()
+
+    try:
+        alert = WebDriverWait(driver, 5).until(EC.alert_is_present())
+        alert_text = alert.text
+
+        if "No hay cupo para la asignatura" in alert_text:
+            alert.accept()
+            print("No hay cupo, reintentando todo el proceso...")
+            driver.quit()  # Cierra el navegador antes de reiniciar
+
+            continue  # Reinicia el proceso desde el principio
+        else:
+            alert.accept()
+            WebDriverWait(driver, 5).until(EC.alert_is_present()).accept()
+    except:
+        print("No alert found")
+
+    break  # Si se llega aquí, significa que la inscripción fue exitosa y se sale del bucle
 
 input("Press Enter to close...")
 driver.quit()
